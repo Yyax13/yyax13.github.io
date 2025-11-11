@@ -1,0 +1,18 @@
+[
+    {
+        "slug": "manifesto-liberdade-digital",
+        "title": "Manifesto da Liberdade Digital",
+        "desc": "Reflexão sobre descentralização e cultura hacker.",
+        "author": "yyax",
+        "post_date": "2025-11-11",
+        "content": "# Liberdade Digital\n\n> A rede é para todos.\n\n```js\nconsole.log('cyberpunk é resistência')\n```"
+    },
+    {
+        "slug": "cyber-etica",
+        "title": "Cyber Ética",
+        "desc": "Discussão sobre moral e ciberespaço.",
+        "author": "anon",
+        "post_date": "2025-10-21",
+        "content": "### Ética Hacker\n\nO código é a nova filosofia."
+    }
+]
