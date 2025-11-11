@@ -10,7 +10,8 @@
     "nav": {
         "home": { "label": "Início", "url": "/" },
         "sections": [
-            { "label": "Papers", "url": "/papers" }
+            { "label": "Papers", "url": "/papers" },
+            { "label": "Syscalls", "url": "/syscalls" }
         ]
     }
 }
