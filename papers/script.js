@@ -7,12 +7,24 @@ import rehypeMermaid from "https://esm.sh/rehype-mermaid@2";
 import rehypeStringify from "https://esm.sh/rehype-stringify@10";
 import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs"
 
+import x86asm from "https://esm.sh/highlight.js@11/lib/languages/x86asm";
+import armasm from "https://esm.sh/highlight.js@11/lib/languages/armasm";
+import avrasm from "https://esm.sh/highlight.js@11/lib/languages/avrasm";
+// opcional: WebAssembly (não é assembly “clássico”)
+import wasm from "https://esm.sh/highlight.js@11/lib/languages/wasm";
+
 async function renderMarkdown(markdownContent) {
     const file = await unified()
         .use(remarkParse)
         .use(remarkGfm)
         .use(remarkRehype)
-        .use(rehypeHighlight, { ignoreMissing: true })
+        .use(rehypeHighlight, { ignoreMissing: true,
+            languages: {
+                x86asm,
+                armasm,
+                avrasm,
+                wasm
+            } })
         .use(rehypeMermaid, { strategy: "pre-mermaid" })
         .use(rehypeStringify)
         .process(markdownContent);
