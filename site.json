@@ -1,7 +1,7 @@
 {
-    "site_name": "Zine do hoWo",
+    "site_name": "hoWo's cysec zine",
     "footer": {
-        "text": "hoWo muito bonitinho - &copy 2025",
+        "text": "hoWo - &copy 2025",
         "links": [
             { "label": "GitHub", "url": "https://github.com/Yyax13" },
             { "label": "Discord", "url": "https://discord.gg/wuPNgED3fB" }
