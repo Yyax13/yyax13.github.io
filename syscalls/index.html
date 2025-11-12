@@ -1,0 +1,1122 @@
+<!doctype html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <link rel="stylesheet" href="style.css">
+    <script defer src="header.js"></script>
+    <script defer src="footer.js"></script>
+    <title>Assembly Syscall Cheatsheet — x86_64 Linux (Completo)</title>
+    <style>
+        .wrap {
+            max-width: 980px;
+            margin: 28px auto;
+            padding: 24px
+        }
+
+        p.lead {
+            color: var(--muted);
+            margin: 6px 0 0;
+            font-size: 13px
+        }
+
+        .controls {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            margin-top: 18px
+        }
+
+        input.search {
+            flex: 1;
+            padding: 10px 12px;
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            background: var(--glass);
+            color: inherit
+        }
+
+        .btn {
+            padding: 8px 12px;
+            border-radius: 10px;
+            border: 0;
+            background: #111;
+            color: var(--accent);
+            cursor: pointer
+        }
+
+        .grid {
+            display: grid;
+            gap: 18px;
+            margin-top: 18px
+        }
+
+        .card {
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0.01));
+            padding: 16px;
+            border-radius: 12px;
+            box-shadow: 0 6px 30px rgba(2, 6, 23, 0.6)
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px
+        }
+
+        th,
+        td {
+            padding: 8px 10px;
+            text-align: left;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.03)
+        }
+
+        th {
+            color: var(--muted);
+            font-weight: 600
+        }
+
+        td.var {
+            font-family: monospace;
+            color: #cbe6ff;
+            min-width: 82px
+        }
+
+        td.num {
+            font-family: monospace;
+            color: #ffd8a8;
+            width: 80px
+        }
+
+        pre.code {
+            background: var(--code-bg);
+            padding: 12px;
+            border-radius: 8px;
+            font-family: monospace;
+            font-size: 13px;
+            overflow: auto
+        }
+
+        .small {
+            font-size: 12px;
+            color: var(--muted)
+        }
+
+        .right-col {
+            display: flex;
+            flex-direction: column;
+            gap: 12px
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 6px 8px;
+            border-radius: 999px;
+            background: rgba(169, 107, 255, 0.08);
+            color: var(--accent);
+            font-weight: 600;
+            font-size: 12px
+        }
+
+        .copy {
+            float: right;
+            background: transparent;
+            border: 0;
+            color: var(--accent);
+            cursor: pointer;
+            font-size: 13px
+        }
+
+        footer {
+            margin-top: 20px;
+            color: var(--muted);
+            font-size: 13px
+        }
+
+        @media (max-width:880px) {
+            .grid {
+                grid-template-columns: 1fr
+            }
+
+            .right-col {
+                order: 2
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="wrap">
+        
+    <header id="header"></header>
+
+        <div style="text-align:right">
+            <span class="badge">x86_64</span>
+            <div class="small">Argumentos: rdi, rsi, rdx, r10, r8, r9 · num → rax</div>
+        </div>
+        <div class="controls">
+            <input id="q" class="search" placeholder="Buscar syscall, número, descrição (ex: execve, 59, write)"
+                oninput="filter()" />
+            <button class="btn" onclick="reset()">Limpar</button>
+            <button class="btn" onclick="toggleExample()">Exemplo</button>
+        </div>
+
+        <div class="grid">
+            <div class="card">
+                <table id="tbl">
+                    <thead>
+                        <tr>
+                            <th>Syscall</th>
+                            <th>Número</th>
+                            <th>Args</th>
+                            <th>Descrição</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="var">read</td>
+                            <td class="num">0</td>
+                            <td>rdi, rsi, rdx</td>
+                            <td>ler de fd</td>
+                        </tr>
+                        <tr>
+                            <td class="var">write</td>
+                            <td class="num">1</td>
+                            <td>rdi, rsi, rdx</td>
+                            <td>escrever em fd</td>
+                        </tr>
+                        <tr>
+                            <td class="var">open</td>
+                            <td class="num">2</td>
+                            <td>rdi, rsi, rdx</td>
+                            <td>abrir arquivo</td>
+                        </tr>
+                        <tr>
+                            <td class="var">close</td>
+                            <td class="num">3</td>
+                            <td>rdi</td>
+                            <td>fechar fd</td>
+                        </tr>
+                        <tr>
+                            <td class="var">stat</td>
+                            <td class="num">4</td>
+                            <td>rdi, rsi</td>
+                            <td>obter status de arquivo</td>
+                        </tr>
+                        <tr>
+                            <td class="var">fstat</td>
+                            <td class="num">5</td>
+                            <td>rdi, rsi</td>
+                            <td>obter status de fd</td>
+                        </tr>
+                        <tr>
+                            <td class="var">lstat</td>
+                            <td class="num">6</td>
+                            <td>rdi, rsi</td>
+                            <td>obter status de link simbólico</td>
+                        </tr>
+                        <tr>
+                            <td class="var">poll</td>
+                            <td class="num">7</td>
+                            <td>rdi, rsi, rdx</td>
+                            <td>esperar por eventos em fd</td>
+                        </tr>
+                        <tr>
+                            <td class="var">lseek</td>
+                            <td class="num">8</td>
+                            <td>rdi, rsi, rdx</td>
+                            <td>reposicionar offset de fd</td>
+                        </tr>
+                        <tr>
+                            <td class="var">mmap</td>
+                            <td class="num">9</td>
+                            <td>rdi, rsi, rdx, r10, r8, r9</td>
+                            <td>mapear memória</td>
+                        </tr>
+                        <tr>
+                            <td class="var">mprotect</td>
+                            <td class="num">10</td>
+                            <td>rdi, rsi, rdx</td>
+                            <td>mudar proteção</td>
+                        </tr>
+                        <tr>
+                            <td class="var">munmap</td>
+                            <td class="num">11</td>
+                            <td>rdi, rsi</td>
+                            <td>desmapear</td>
+                        </tr>
+                        <tr>
+                            <td class="var">brk</td>
+                            <td class="num">12</td>
+                            <td>rdi</td>
+                            <td>ajustar heap</td>
+                        </tr>
+                        <tr>
+                            <td class="var">rt_sigaction</td>
+                            <td class="num">13</td>
+                            <td>rdi, rsi, rdx, r10</td>
+                            <td>mudar ação de sinal</td>
+                        </tr>
+                        <tr>
+                            <td class="var">rt_sigprocmask</td>
+                            <td class="num">14</td>
+                            <td>rdi, rsi, rdx, r10</td>
+                            <td>mudar máscara de sinal</td>
+                        </tr>
+                        <tr>
+                            <td class="var">rt_sigreturn</td>
+                            <td class="num">15</td>
+                            <td>—</td>
+                            <td>retornar de manipulador de sinal</td>
+                        </tr>
+                        <tr>
+                            <td class="var">ioctl</td>
+                            <td class="num">16</td>
+                            <td>rdi, rsi, rdx</td>
+                            <td>controle de dispositivo</td>
+                        </tr>
+                        <tr>
+                            <td class="var">pread64</td>
+                            <td class="num">17</td>
+                            <td>rdi, rsi, rdx, r10</td>
+                            <td>ler em offset</td>
+                        </tr>
+                        <tr>
+                            <td class="var">pwrite64</td>
+                            <td class="num">18</td>
+                            <td>rdi, rsi, rdx, r10</td>
+                            <td>escrever em offset</td>
+                        </tr>
+                        <tr>
+                            <td class="var">readv</td>
+                            <td class="num">19</td>
+                            <td>rdi, rsi, rdx</td>
+                            <td>ler em múltiplos buffers</td>
+                        </tr>
+                        <tr>
+                            <td class="var">writev</td>
+                            <td class="num">20</td>
+                            <td>rdi, rsi, rdx</td>
+                            <td>escrever em múltiplos buffers</td>
+                        </tr>
+                        <tr>
+                            <td class="var">access</td>
+                            <td class="num">21</td>
+                            <td>rdi, rsi</td>
+                            <td>verificar permissão de arquivo</td>
+                        </tr>
+                        <tr>
+                            <td class="var">pipe</td>
+                            <td class="num">22</td>
+                            <td>rdi</td>
+                            <td>criar pipe</td>
+                        </tr>
+                        <tr>
+                            <td class="var">select</td>
+                            <td class="num">23</td>
+                            <td>rdi, rsi, rdx, r10, r8</td>
+                            <td>esperar por eventos em fd</td>
+                        </tr>
+                        <tr>
+                            <td class="var">sched_yield</td>
+                            <td class="num">24</td>
+                            <td>—</td>
+                            <td>ceder CPU</td>
+                        </tr>
+                        <tr>
+                            <td class="var">mremap</td>
+                            <td class="num">25</td>
+                            <td>rdi, rsi, rdx, r10, r8</td>
+                            <td>remapear região de memória</td>
+                        </tr>
+                        <tr>
+                            <td class="var">msync</td>
+                            <td class="num">26</td>
+                            <td>rdi, rsi, rdx</td>
+                            <td>sincronizar memória mapeada</td>
+                        </tr>
+                        <tr>
+                            <td class="var">mincore</td>
+                            <td class="num">27</td>
+                            <td>rdi, rsi, rdx</td>
+                            <td>determinar páginas residentes</td>
+                        </tr>
+                        <tr>
+                            <td class="var">madvise</td>
+                            <td class="num">28</td>
+                            <td>rdi, rsi, rdx</td>
+                            <td>dar conselho sobre uso de memória</td>
+                        </tr>
+                        <tr>
+                            <td class="var">shmget</td>
+                            <td class="num">29</td>
+                            <td>rdi, rsi, rdx</td>
+                            <td>obter segmento de memória compartilhada</td>
+                        </tr>
+                        <tr>
+                            <td class="var">shmat</td>
+                            <td class="num">30</td>
+                            <td>rdi, rsi, rdx</td>
+                            <td>anexar segmento de memória compartilhada</td>
+                        </tr>
+                        <tr>
+                            <td class="var">shmctl</td>
+                            <td class="num">31</td>
+                            <td>rdi, rsi, rdx</td>
+                            <td>controlar segmento de memória compartilhada</td>
+                        </tr>
+                        <tr>
+                            <td class="var">dup</td>
+                            <td class="num">32</td>
+                            <td>rdi</td>
+                            <td>duplicar fd</td>
+                        </tr>
+                        <tr>
+                            <td class="var">dup2</td>
+                            <td class="num">33</td>
+                            <td>rdi, rsi</td>
+                            <td>duplicar fd para número específico</td>
+                        </tr>
+                        <tr>
+                            <td class="var">pause</td>
+                            <td class="num">34</td>
+                            <td>—</td>
+                            <td>esperar por sinal</td>
+                        </tr>
+                        <tr>
+                            <td class="var">nanosleep</td>
+                            <td class="num">35</td>
+                            <td>rdi, rsi</td>
+                            <td>pausar por tempo específico</td>
+                        </tr>
+                        <tr>
+                            <td class="var">getitimer</td>
+                            <td class="num">36</td>
+                            <td>rdi, rsi</td>
+                            <td>obter valor do timer</td>
+                        </tr>
+                        <tr>
+                            <td class="var">alarm</td>
+                            <td class="num">37</td>
+                            <td>rdi</td>
+                            <td>definir alarme</td>
+                        </tr>
+                        <tr>
+                            <td class="var">setitimer</td>
+                            <td class="num">38</td>
+                            <td>rdi, rsi, rdx</td>
+                            <td>definir valor do timer</td>
+                        </tr>
+                        <tr>
+                            <td class="var">getpid</td>
+                            <td class="num">39</td>
+                            <td>—</td>
+                            <td>obter PID</td>
+                        </tr>
+                        <tr>
+                            <td class="var">sendfile</td>
+                            <td class="num">40</td>
+                            <td>rdi, rsi, rdx, r10</td>
+                            <td>enviar arquivo</td>
+                        </tr>
+                        <tr>
+                            <td class="var">socket</td>
+                            <td class="num">41</td>
+                            <td>rdi, rsi, rdx</td>
+                            <td>criar socket</td>
+                        </tr>
+                        <tr>
+                            <td class="var">connect</td>
+                            <td class="num">42</td>
+                            <td>rdi, rsi, rdx</td>
+                            <td>conectar socket</td>
+                        </tr>
+                        <tr>
+                            <td class="var">accept</td>
+                            <td class="num">43</td>
+                            <td>rdi, rsi, rdx</td>
+                            <td>aceitar conexão</td>
+                        </tr>
+                        <tr>
+                            <td class="var">sendto</td>
+                            <td class="num">44</td>
+                            <td>rdi, rsi, rdx, r10, r8, r9</td>
+                            <td>enviar mensagem</td>
+                        </tr>
+                        <tr>
+                            <td class="var">recvfrom</td>
+                            <td class="num">45</td>
+                            <td>rdi, rsi, rdx, r10, r8, r9</td>
+                            <td>receber mensagem</td>
+                        </tr>
+                        <tr>
+                            <td class="var">sendmsg</td>
+                            <td class="num">46</td>
+                            <td>rdi, rsi, rdx</td>
+                            <td>enviar mensagem</td>
+                        </tr>
+                        <tr>
+                            <td class="var">recvmsg</td>
+                            <td class="num">47</td>
+                            <td>rdi, rsi, rdx</td>
+                            <td>receber mensagem</td>
+                        </tr>
+                        <tr>
+                            <td class="var">shutdown</td>
+                            <td class="num">48</td>
+                            <td>rdi, rsi</td>
+                            <td>desligar socket</td>
+                        </tr>
+                        <tr>
+                            <td class="var">bind</td>
+                            <td class="num">49</td>
+                            <td>rdi, rsi, rdx</td>
+                            <td>associar endereço ao socket</td>
+                        </tr>
+                        <tr>
+                            <td class="var">listen</td>
+                            <td class="num">50</td>
+                            <td>rdi, rsi</td>
+                            <td>ouvir por conexões</td>
+                        </tr>
+                        <tr>
+                            <td class="var">getsockname</td>
+                            <td class="num">51</td>
+                            <td>rdi, rsi, rdx</td>
+                            <td>obter nome do socket</td>
+                        </tr>
+                        <tr>
+                            <td class="var">getpeername</td>
+                            <td class="num">52</td>
+                            <td>rdi, rsi, rdx</td>
+                            <td>obter nome do peer</td>
+                        </tr>
+                        <tr>
+                            <td class="var">socketpair</td>
+                            <td class="num">53</td>
+                            <td>rdi, rsi, rdx, r10</td>
+                            <td>criar par de sockets</td>
+                        </tr>
+                        <tr>
+                            <td class="var">setsockopt</td>
+                            <td class="num">54</td>
+                            <td>rdi, rsi, rdx, r10, r8</td>
+                            <td>definir opção de socket</td>
+                        </tr>
+                        <tr>
+                            <td class="var">getsockopt</td>
+                            <td class="num">55</td>
+                            <td>rdi, rsi, rdx, r10, r8</td>
+                            <td>obter opção de socket</td>
+                        </tr>
+                        <tr>
+                            <td class="var">clone</td>
+                            <td class="num">56</td>
+                            <td>rdi, rsi, rdx, r10, r8, r9</td>
+                            <td>criar processo</td>
+                        </tr>
+                        <tr>
+                            <td class="var">fork</td>
+                            <td class="num">57</td>
+                            <td>—</td>
+                            <td>criar processo</td>
+                        </tr>
+                        <tr>
+                            <td class="var">vfork</td>
+                            <td class="num">58</td>
+                            <td>—</td>
+                            <td>criar processo</td>
+                        </tr>
+                        <tr>
+                            <td class="var">execve</td>
+                            <td class="num">59</td>
+                            <td>rdi, rsi, rdx</td>
+                            <td>executar programa</td>
+                        </tr>
+                        <tr>
+                            <td class="var">exit</td>
+                            <td class="num">60</td>
+                            <td>rdi</td>
+                            <td>sair do processo</td>
+                        </tr>
+                        <tr>
+                            <td class="var">wait4</td>
+                            <td class="num">61</td>
+                            <td>rdi, rsi, rdx, r10</td>
+                            <td>esperar por processo</td>
+                        </tr>
+                        <tr>
+                            <td class="var">kill</td>
+                            <td class="num">62</td>
+                            <td>rdi, rsi</td>
+                            <td>enviar sinal</td>
+                        </tr>
+                        <tr>
+                            <td class="var">uname</td>
+                            <td class="num">63</td>
+                            <td>rdi</td>
+                            <td>obter informações do sistema</td>
+                        </tr>
+                        <tr>
+                            <td class="var">semget</td>
+                            <td class="num">64</td>
+                            <td>rdi, rsi, rdx</td>
+                            <td>obter semáforo</td>
+                        </tr>
+                        <tr>
+                            <td class="var">semop</td>
+                            <td class="num">65</td>
+                            <td>rdi, rsi, rdx</td>
+                            <td>operar semáforo</td>
+                        </tr>
+                        <tr>
+                            <td class="var">semctl</td>
+                            <td class="num">66</td>
+                            <td>rdi, rsi, rdx, r10</td>
+                            <td>controlar semáforo</td>
+                        </tr>
+                        <tr>
+                            <td class="var">shmdt</td>
+                            <td class="num">67</td>
+                            <td>rdi</td>
+                            <td>desanexar segmento de memória compartilhada</td>
+                        </tr>
+                        <tr>
+                            <td class="var">msgget</td>
+                            <td class="num">68</td>
+                            <td>rdi, rsi</td>
+                            <td>obter fila de mensagens</td>
+                        </tr>
+                        <tr>
+                            <td class="var">msgsnd</td>
+                            <td class="num">69</td>
+                            <td>rdi, rsi, rdx, r10</td>
+                            <td>enviar mensagem</td>
+                        </tr>
+                        <tr>
+                            <td class="var">msgrcv</td>
+                            <td class="num">70</td>
+                            <td>rdi, rsi, rdx, r10, r8</td>
+                            <td>receber mensagem</td>
+                        </tr>
+                        <tr>
+                            <td class="var">msgctl</td>
+                            <td class="num">71</td>
+                            <td>rdi, rsi, rdx</td>
+                            <td>controlar fila de mensagens</td>
+                        </tr>
+                        <tr>
+                            <td class="var">fcntl</td>
+                            <td class="num">72</td>
+                            <td>rdi, rsi, rdx</td>
+                            <td>manipular fd</td>
+                        </tr>
+                        <tr>
+                            <td class="var">flock</td>
+                            <td class="num">73</td>
+                            <td>rdi, rsi</td>
+                            <td>bloquear fd</td>
+                        </tr>
+                        <tr>
+                            <td class="var">fsync</td>
+                            <td class="num">74</td>
+                            <td>rdi</td>
+                            <td>sincronizar fd</td>
+                        </tr>
+                        <tr>
+                            <td class="var">fdatasync</td>
+                            <td class="num">75</td>
+                            <td>rdi</td>
+                            <td>sincronizar dados de fd</td>
+                        </tr>
+                        <tr>
+                            <td class="var">truncate</td>
+                            <td class="num">76</td>
+                            <td>rdi, rsi</td>
+                            <td>truncar arquivo</td>
+                        </tr>
+                        <tr>
+                            <td class="var">ftruncate</td>
+                            <td class="num">77</td>
+                            <td>rdi, rsi</td>
+                            <td>truncar fd</td>
+                        </tr>
+                        <tr>
+                            <td class="var">getdents</td>
+                            <td class="num">78</td>
+                            <td>rdi, rsi, rdx</td>
+                            <td>ler entradas de diretório</td>
+                        </tr>
+                        <tr>
+                            <td class="var">getcwd</td>
+                            <td class="num">79</td>
+                            <td>rdi, rsi</td>
+                            <td>obter diretório atual</td>
+                        </tr>
+                        <tr>
+                            <td class="var">chdir</td>
+                            <td class="num">80</td>
+                            <td>rdi</td>
+                            <td>mudar diretório</td>
+                        </tr>
+                        <tr>
+                            <td class="var">fchdir</td>
+                            <td class="num">81</td>
+                            <td>rdi</td>
+                            <td>mudar diretório de fd</td>
+                        </tr>
+                        <tr>
+                            <td class="var">rename</td>
+                            <td class="num">82</td>
+                            <td>rdi, rsi</td>
+                            <td>renomear arquivo</td>
+                        </tr>
+                        <tr>
+                            <td class="var">mkdir</td>
+                            <td class="num">83</td>
+                            <td>rdi, rsi</td>
+                            <td>criar diretório</td>
+                        </tr>
+                        <tr>
+                            <td class="var">rmdir</td>
+                            <td class="num">84</td>
+                            <td>rdi</td>
+                            <td>remover diretório</td>
+                        </tr>
+                        <tr>
+                            <td class="var">creat</td>
+                            <td class="num">85</td>
+                            <td>rdi, rsi</td>
+                            <td>criar arquivo</td>
+                        </tr>
+                        <tr>
+                            <td class="var">link</td>
+                            <td class="num">86</td>
+                            <td>rdi, rsi</td>
+                            <td>criar link</td>
+                        </tr>
+                        <tr>
+                            <td class="var">unlink</td>
+                            <td class="num">87</td>
+                            <td>rdi</td>
+                            <td>remover link</td>
+                        </tr>
+                        <tr>
+                            <td class="var">symlink</td>
+                            <td class="num">88</td>
+                            <td>rdi, rsi</td>
+                            <td>criar link simbólico</td>
+                        </tr>
+                        <tr>
+                            <td class="var">readlink</td>
+                            <td class="num">89</td>
+                            <td>rdi, rsi, rdx</td>
+                            <td>ler link simbólico</td>
+                        </tr>
+                        <tr>
+                            <td class="var">chmod</td>
+                            <td class="num">90</td>
+                            <td>rdi, rsi</td>
+                            <td>mudar permissões de arquivo</td>
+                        </tr>
+                        <tr>
+                            <td class="var">fchmod</td>
+                            <td class="num">91</td>
+                            <td>rdi, rsi</td>
+                            <td>mudar permissões de fd</td>
+                        </tr>
+                        <tr>
+                            <td class="var">chown</td>
+                            <td class="num">92</td>
+                            <td>rdi, rsi, rdx</td>
+                            <td>mudar proprietário de arquivo</td>
+                        </tr>
+                        <tr>
+                            <td class="var">fchown</td>
+                            <td class="num">93</td>
+                            <td>rdi, rsi, rdx</td>
+                            <td>mudar proprietário de fd</td>
+                        </tr>
+                        <tr>
+                            <td class="var">lchown</td>
+                            <td class="num">94</td>
+                            <td>rdi, rsi, rdx</td>
+                            <td>mudar proprietário de link simbólico</td>
+                        </tr>
+                        <tr>
+                            <td class="var">umask</td>
+                            <td class="num">95</td>
+                            <td>rdi</td>
+                            <td>definir máscara de criação de arquivo</td>
+                        </tr>
+                        <tr>
+                            <td class="var">gettimeofday</td>
+                            <td class="num">96</td>
+                            <td>rdi, rsi</td>
+                            <td>obter hora atual</td>
+                        </tr>
+                        <tr>
+                            <td class="var">getrlimit</td>
+                            <td class="num">97</td>
+                            <td>rdi, rsi</td>
+                            <td>obter limites de recurso</td>
+                        </tr>
+                        <tr>
+                            <td class="var">getrusage</td>
+                            <td class="num">98</td>
+                            <td>rdi, rsi</td>
+                            <td>obter uso de recursos</td>
+                        </tr>
+                        <tr>
+                            <td class="var">sysinfo</td>
+                            <td class="num">99</td>
+                            <td>rdi</td>
+                            <td>obter informações do sistema</td>
+                        </tr>
+                        <tr>
+                            <td class="var">times</td>
+                            <td class="num">100</td>
+                            <td>rdi</td>
+                            <td>obter tempos de processo</td>
+                        </tr>
+                        <tr>
+                            <td class="var">ptrace</td>
+                            <td class="num">101</td>
+                            <td>rdi, rsi, rdx, r10</td>
+                            <td>controlar processo</td>
+                        </tr>
+                        <tr>
+                            <td class="var">getuid</td>
+                            <td class="num">102</td>
+                            <td>—</td>
+                            <td>obter UID</td>
+                        </tr>
+                        <tr>
+                            <td class="var">syslog</td>
+                            <td class="num">103</td>
+                            <td>rdi, rsi, rdx</td>
+                            <td>controlar log do sistema</td>
+                        </tr>
+                        <tr>
+                            <td class="var">getgid</td>
+                            <td class="num">104</td>
+                            <td>—</td>
+                            <td>obter GID</td>
+                        </tr>
+                        <tr>
+                            <td class="var">setuid</td>
+                            <td class="num">105</td>
+                            <td>rdi</td>
+                            <td>definir UID</td>
+                        </tr>
+                        <tr>
+                            <td class="var">setgid</td>
+                            <td class="num">106</td>
+                            <td>rdi</td>
+                            <td>definir GID</td>
+                        </tr>
+                        <tr>
+                            <td class="var">geteuid</td>
+                            <td class="num">107</td>
+                            <td>—</td>
+                            <td>obter EUID</td>
+                        </tr>
+                        <tr>
+                            <td class="var">getegid</td>
+                            <td class="num">108</td>
+                            <td>—</td>
+                            <td>obter EGID</td>
+                        </tr>
+                        <tr>
+                            <td class="var">setpgid</td>
+                            <td class="num">109</td>
+                            <td>rdi, rsi</td>
+                            <td>definir PGID</td>
+                        </tr>
+                        <tr>
+                            <td class="var">getppid</td>
+                            <td class="num">110</td>
+                            <td>—</td>
+                            <td>obter PPID</td>
+                        </tr>
+                        <tr>
+                            <td class="var">getpgrp</td>
+                            <td class="num">111</td>
+                            <td>—</td>
+                            <td>obter PGRP</td>
+                        </tr>
+                        <tr>
+                            <td class="var">setsid</td>
+                            <td class="num">112</td>
+                            <td>—</td>
+                            <td>criar nova sessão</td>
+                        </tr>
+                        <tr>
+                            <td class="var">setreuid</td>
+                            <td class="num">113</td>
+                            <td>rdi, rsi</td>
+                            <td>definir RUID e EUID</td>
+                        </tr>
+                        <tr>
+                            <td class="var">setregid</td>
+                            <td class="num">114</td>
+                            <td>rdi, rsi</td>
+                            <td>definir RGID e EGID</td>
+                        </tr>
+                        <tr>
+                            <td class="var">getgroups</td>
+                            <td class="num">115</td>
+                            <td>rdi, rsi</td>
+                            <td>obter grupos suplementares</td>
+                        </tr>
+                        <tr>
+                            <td class="var">setgroups</td>
+                            <td class="num">116</td>
+                            <td>rdi, rsi</td>
+                            <td>definir grupos suplementares</td>
+                        </tr>
+                        <tr>
+                            <td class="var">setresuid</td>
+                            <td class="num">117</td>
+                            <td>rdi, rsi, rdx</td>
+                            <td>definir RUID, EUID e SUID</td>
+                        </tr>
+                        <tr>
+                            <td class="var">getresuid</td>
+                            <td class="num">118</td>
+                            <td>rdi, rsi, rdx</td>
+                            <td>obter RUID, EUID e SUID</td>
+                        </tr>
+                        <tr>
+                            <td class="var">setresgid</td>
+                            <td class="num">119</td>
+                            <td>rdi, rsi, rdx</td>
+                            <td>definir RGID, EGID e SGID</td>
+                        </tr>
+                        <tr>
+                            <td class="var">getresgid</td>
+                            <td class="num">120</td>
+                            <td>rdi, rsi, rdx</td>
+                            <td>obter RGID, EGID e SGID</td>
+                        </tr>
+                        <tr>
+                            <td class="var">getpgid</td>
+                            <td class="num">121</td>
+                            <td>rdi</td>
+                            <td>obter PGID</td>
+                        </tr>
+                        <tr>
+                            <td class="var">setfsuid</td>
+                            <td class="num">122</td>
+                            <td>rdi</td>
+                            <td>definir FSUID</td>
+                        </tr>
+                        <tr>
+                            <td class="var">setfsgid</td>
+                            <td class="num">123</td>
+                            <td>rdi</td>
+                            <td>definir FSGID</td>
+                        </tr>
+                        <tr>
+                            <td class="var">getsid</td>
+                            <td class="num">124</td>
+                            <td>rdi</td>
+                            <td>obter SID</td>
+                        </tr>
+                        <tr>
+                            <td class="var">capget</td>
+                            <td class="num">125</td>
+                            <td>rdi, rsi</td>
+                            <td>obter capacidades</td>
+                        </tr>
+                        <tr>
+                            <td class="var">capset</td>
+                            <td class="num">126</td>
+                            <td>rdi, rsi</td>
+                            <td>definir capacidades</td>
+                        </tr>
+                        <tr>
+                            <td class="var">rt_sigpending</td>
+                            <td class="num">127</td>
+                            <td>rdi, rsi</td>
+                            <td>obter sinais pendentes</td>
+                        </tr>
+                        <tr>
+                            <td class="var">rt_sigtimedwait</td>
+                            <td class="num">128</td>
+                            <td>rdi, rsi, rdx, r10</td>
+                            <td>esperar por sinal</td>
+                        </tr>
+                        <tr>
+                            <td class="var">rt_sigqueueinfo</td>
+                            <td class="num">129</td>
+                            <td>rdi, rsi, rdx</td>
+                            <td>enfileirar sinal</td>
+                        </tr>
+                        <tr>
+                            <td class="var">rt_sigsuspend</td>
+                            <td class="num">130</td>
+                            <td>rdi</td>
+                            <td>suspender até sinal</td>
+                        </tr>
+                        <tr>
+                            <td class="var">sigaltstack</td>
+                            <td class="num">131</td>
+                            <td>rdi, rsi</td>
+                            <td>definir pilha alternativa de sinal</td>
+                        </tr>
+                        <tr>
+                            <td class="var">utime</td>
+                            <td class="num">132</td>
+                            <td>rdi, rsi</td>
+                            <td>definir tempos de acesso/modificação</td>
+                        </tr>
+                        <tr>
+                            <td class="var">mknod</td>
+                            <td class="num">133</td>
+                            <td>rdi, rsi, rdx</td>
+                            <td>criar nó de sistema de arquivos</td>
+                        </tr>
+                        <tr>
+                            <td class="var">uselib</td>
+                            <td class="num">134</td>
+                            <td>rdi</td>
+                            <td>carregar biblioteca compartilhada</td>
+                        </tr>
+                        <tr>
+                            <td class="var">personality</td>
+                            <td class="num">135</td>
+                            <td>rdi</td>
+                            <td>definir personalidade do processo</td>
+                        </tr>
+                        <tr>
+                            <td class="var">ustat</td>
+                            <td class="num">136</td>
+                            <td>rdi, rsi</td>
+                            <td>obter informações de sistema de arquivos</td>
+                        </tr>
+                        <tr>
+                            <td class="var">statfs</td>
+                            <td class="num">137</td>
+                            <td>rdi, rsi</td>
+                            <td>obter informações de sistema de arquivos</td>
+                        </tr>
+                        <tr>
+                            <td class="var">fstatfs</td>
+                            <td class="num">138</td>
+                            <td>rdi, rsi</td>
+                            <td>obter informações de sistema de arquivos</td>
+                        </tr>
+                        <tr>
+                            <td class="var">sysfs</td>
+                            <td class="num">139</td>
+                            <td>rdi, rsi, rdx</td>
+                            <td>manipular sistema de arquivos</td>
+                        </tr>
+                        <tr>
+                            <td class="var">getpriority</td>
+                            <td class="num">140</td>
+                            <td>rdi, rsi</td>
+                            <td>obter prioridade</td>
+                        </tr>
+                        <tr>
+                            <td class="var">setpriority</td>
+                            <td class="num">141</td>
+                            <td>rdi, rsi, rdx</td>
+                            <td>definir prioridade</td>
+                        </tr>
+                        <tr>
+                            <td class="var">sched_setparam</td>
+                            <td class="num">142</td>
+                            <td>rdi, rsi</td>
+                            <td>definir parâmetros de escalonamento</td>
+                        </tr>
+                        <tr>
+                            <td class="var">sched_getparam</td>
+                            <td class="num">143</td>
+                            <td>rdi, rsi</td>
+                            <td>obter parâmetros de escalonamento</td>
+                        </tr>
+                        <tr>
+                            <td class="var">sched_setscheduler</td>
+                            <td class="num">144</td>
+                            <td>rdi, rsi, rdx</td>
+                            <td>definir escalonador</td>
+                        </tr>
+                        <tr>
+                            <td class="var">sched_getscheduler</td>
+                            <td class="num">145</td>
+                            <td>rdi</td>
+                            <td>obter escalonador</td>
+                        </tr>
+                        <tr>
+                            <td class="var">sched_get_priority_max</td>
+                            <td class="num">146</td>
+                            <td>rdi</td>
+                            <td>obter prioridade máxima</td>
+                        </tr>
+                        <tr>
+                            <td class="var">sched_get_priority_min</td>
+                            <td class="num">147</td>
+                            <td>rdi</td>
+                            <td>obter prioridade mínima</td>
+                        </tr>
+                        <tr>
+                            <td class="var">sched_rr_get_interval</td>
+                            <td class="num">148</td>
+                            <td>rdi, rsi</td>
+                            <td>obter intervalo de round-robin</td>
+                        </tr>
+                        <tr>
+                            <td class="var">mlock</td>
+                            <td class="num">149</td>
+                            <td>rdi, rsi</td>
+                            <td>bloquear memória</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+    <footer id="footer"></footer>
+        </div>
+    </div>
+
+    <script>
+        function filter() {
+            const q = document.getElementById('q').value.toLowerCase();
+            const trs = document.querySelectorAll('#tbl tbody tr');
+            trs.forEach(tr => {
+                const text = tr.innerText.toLowerCase();
+                tr.style.display = text.includes(q) ? '' : 'none';
+            })
+        }
+        function reset() { document.getElementById('q').value = ''; filter() }
+        function copyExample() {
+            const txt = document.getElementById('example').innerText;
+            navigator.clipboard.writeText(txt).then(() => alert('Exemplo copiado!'))
+        }
+        function toggleExample() {
+            const el = document.getElementById('example');
+            el.parentElement.style.display = el.parentElement.style.display === 'none' ? '' : 'block';
+        }
+        function downloadCSV() {
+            const rows = [['syscall', 'number', 'args', 'desc']];
+            document.querySelectorAll('#tbl tbody tr').forEach(tr => {
+                const tds = tr.querySelectorAll('td');
+                rows.push([tds[0].innerText, tds[1].innerText, tds[2].innerText, tds[3].innerText]);
+            });
+            const csv = rows.map(r => r.map(cell => '"' + cell.replace(/"/g, '""') + '"').join(',')).join('\n');
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a'); a.href = url; a.download = 'syscalls_x86_64_completo.csv'; a.click(); URL.revokeObjectURL(url);
+        }
+        function downloadHTML() {
+            const html = document.documentElement.outerHTML;
+            const blob = new Blob([html], { type: 'text/html' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a'); a.href = url; a.download = 'assembly-syscall-cheatsheet-completo.html'; a.click(); URL.revokeObjectURL(url);
+        }
+    </script>
+</body>
+
+</html>
