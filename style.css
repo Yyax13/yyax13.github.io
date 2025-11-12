@@ -93,3 +93,32 @@ nav a:hover {
     font-weight: bold;
     font-size: 1.5em;
 }
+
+pre {
+    background-color: #111;
+    color: #eee;
+    overflow-x: auto;
+    border-radius: 8px;
+    padding: 1rem;
+    scrollbar-width: thin;              /* Firefox */
+    scrollbar-color: #444 #1a1a1a;      /* Firefox */
+}
+
+pre::-webkit-scrollbar {
+    height: 8px;                        /* altura da barra horizontal */
+}
+
+pre::-webkit-scrollbar-track {
+    background: #1a1a1a;
+    border-radius: 8px;
+}
+
+pre::-webkit-scrollbar-thumb {
+    background: #444;
+    border-radius: 8px;
+}
+
+pre::-webkit-scrollbar-thumb:hover {
+    background: #666;
+}
+
